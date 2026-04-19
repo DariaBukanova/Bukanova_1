@@ -1,0 +1,10 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="AutomationStoreTests" parallel="classes" thread-count="3">
+    <test name="All Tests">
+        <classes>
+            <class name="tests.SortingTest"/>
+            <class name="tests.SearchAndCartTest"/>
+            <class name="tests.RandomProductsTest"/>
+        </classes>
+    </test>
+</suite>
