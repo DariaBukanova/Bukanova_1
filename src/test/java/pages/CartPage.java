@@ -6,19 +6,11 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import utils.Helper;
-
-import java.time.Duration;
-import java.util.ArrayList;
+import utils.PriceParser;
 import java.util.List;
 
-public class CartPage {
-    private final WebDriver driver;
-    private final Helper helper;
-
+public class CartPage extends BasePage {
     @FindBy(css = "div.cart-info tbody tr:has(input[name*='quantity'])")
     private List<WebElement> cartRows;
 
@@ -29,14 +21,11 @@ public class CartPage {
     private WebElement totalAmount;
 
     public CartPage(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
-        this.helper = new Helper(driver);
+        super(driver);
     }
 
     @Step("Переход в корзину")
     public void goToCart() {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("a[href*='checkout/cart']")));
         WebElement cartLink = driver.findElement(By.cssSelector("a[href*='checkout/cart']"));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", cartLink);
@@ -45,7 +34,7 @@ public class CartPage {
 
     private double getRowPrice(WebElement row) {
         WebElement priceElement = row.findElement(By.cssSelector("td.align_right"));
-        return Helper.parsePrice(priceElement.getText());
+        return PriceParser.parsePrice(priceElement.getText());
     }
 
     private int getRowQuantity(WebElement row) {
@@ -53,12 +42,11 @@ public class CartPage {
         return Integer.parseInt(quantityField.getAttribute("value"));
     }
 
-    @Step("Получение стоимости доставки со страницы")
     private double getShippingCost() {
         try {
             WebElement shippingRow = driver.findElement(By.xpath("//tr[td/span[contains(text(),'Flat Shipping Rate')]]"));
             WebElement shippingValue = shippingRow.findElement(By.cssSelector("td:last-child span"));
-            return Helper.parsePrice(shippingValue.getText());
+            return PriceParser.parsePrice(shippingValue.getText());
         } catch (Exception e) {
             return 0.0;
         }
@@ -71,7 +59,6 @@ public class CartPage {
             WebElement removeButton = row.findElement(By.cssSelector("a[href*='remove']"));
             helper.scrollAndWaitForClickable(removeButton);
             removeButton.click();
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.stalenessOf(row));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("cart_update")));
         }
@@ -79,12 +66,10 @@ public class CartPage {
 
     @Step("Удаление всех чётных по порядку товаров")
     public void removeEvenItems() {
-        List<Integer> evenIndexes = new ArrayList<>();
-        for (int i = 1; i < cartRows.size(); i += 2) {
-            evenIndexes.add(i);
-        }
-        for (int i = evenIndexes.size() - 1; i >= 0; i--) {
-            removeItemByIndex(evenIndexes.get(i));
+        for (int i = cartRows.size() - 1; i >= 0; i--) {
+            if (i % 2 != 0) {
+                removeItemByIndex(i);
+            }
         }
     }
 
@@ -111,8 +96,7 @@ public class CartPage {
             quantityField.sendKeys(String.valueOf(newQuantity));
             helper.scrollAndWaitForClickable(updateButton);
             updateButton.click();
-            new WebDriverWait(driver, Duration.ofSeconds(10))
-                    .until(ExpectedConditions.presenceOfElementLocated(By.id("cart_update")));
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("cart_update")));
         }
     }
 
@@ -133,7 +117,6 @@ public class CartPage {
 
     @Step("Получение фактической итоговой суммы")
     public double getTotalAmount() {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.visibilityOf(totalAmount));
         String cleanedText = totalAmount.getText().replaceAll("[^0-9.]", "");
         if (cleanedText.isEmpty()) {

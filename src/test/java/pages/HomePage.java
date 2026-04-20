@@ -5,35 +5,25 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import utils.Helper;
-
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class HomePage {
-    private final WebDriver driver;
-    private final Helper helper;
+public class HomePage extends BasePage {
     private final Random random = new Random();
 
     @FindBy(css = "a.prdocutname")
     private List<WebElement> productNames;
 
     public HomePage(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
-        this.helper = new Helper(driver);
+        super(driver);
     }
 
     @Step("Открытие главной страницы")
     public void open() {
         driver.get("https://automationteststore.com/");
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
         wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("a.prdocutname")));
     }
 
@@ -66,7 +56,6 @@ public class HomePage {
             }
         }
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("product_quantity")));
 
         WebElement quantityField = driver.findElement(By.id("product_quantity"));

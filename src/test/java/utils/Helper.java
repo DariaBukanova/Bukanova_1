@@ -6,15 +6,13 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-
 public class Helper {
     private final WebDriver driver;
     private final WebDriverWait wait;
 
-    public Helper(WebDriver driver) {
+    public Helper(WebDriver driver, WebDriverWait wait) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = wait;
     }
 
     public void waitForVisibility(WebElement element) {
@@ -28,9 +26,5 @@ public class Helper {
     public void scrollAndWaitForClickable(WebElement element) {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
         waitForClickable(element);
-    }
-
-    public static double parsePrice(String text) {
-        return Double.parseDouble(text.replace("$", "").replace(",", "").trim());
     }
 }

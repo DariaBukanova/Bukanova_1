@@ -5,33 +5,24 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import utils.Helper;
+import utils.PriceParser;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CategoryPage {
-    private final WebDriver driver;
-    private final Helper helper;
-
+public class CategoryPage extends BasePage {
     @FindBy(id = "sort")
-    WebElement sortDropdown;
+    private WebElement sortDropdown;
 
     public CategoryPage(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
-        this.helper = new Helper(driver);
+        super(driver);
     }
 
     @Step("Открытие категории по URL: {url}")
     public void openCategory(String url) {
         driver.get(url);
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("a.prdocutname")));
     }
 
@@ -40,8 +31,6 @@ public class CategoryPage {
         helper.waitForVisibility(sortDropdown);
         Select select = new Select(sortDropdown);
         select.selectByVisibleText(visibleText);
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector("a.prdocutname")));
     }
 
@@ -68,12 +57,11 @@ public class CategoryPage {
 
         List<Double> prices = new ArrayList<>();
         for (WebElement price : productPrices) {
-            String priceText = String.valueOf(Helper.parsePrice(price.getText()));
+            String priceText = String.valueOf(PriceParser.parsePrice(price.getText()));
             if (!priceText.isEmpty()) {
                 try {
                     prices.add(Double.parseDouble(priceText));
                 } catch (NumberFormatException ignored) {
-
                 }
             }
         }
