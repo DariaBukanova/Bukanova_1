@@ -25,10 +25,17 @@ public class SearchPage extends BasePage {
     @FindBy(css = "a.prdocutname")
     private List<WebElement> productNames;
 
-    private final By productQuantityLocator = By.id("product_quantity");
-    private final By addToCartButtonLocator = By.cssSelector("a.cart");
-    private final By productNameLocator = By.cssSelector("a.prdocutname");
-    private final By cartConfirmationLocator = By.cssSelector("div.cart-info tbody tr, a.cart");
+    @FindBy(id = "product_quantity")
+    private WebElement productQuantityField;
+
+    @FindBy(css = "a.cart")
+    private WebElement addToCartButton;
+
+    private final By productNamesBy = By.cssSelector("a.prdocutname");
+    private final By productQuantityBy = By.id("product_quantity");
+    private final By addToCartBy = By.cssSelector("a.cart");
+    private final By cartConfirmationBy = By.cssSelector("div.cart-info tbody tr, a.cart");
+    private final By searchResultsBy = By.cssSelector("div.product-grid, div.thumbnails, div.searchresults");
 
     public SearchPage(WebDriver driver) {
         super(driver);
@@ -40,14 +47,15 @@ public class SearchPage extends BasePage {
         searchField.clear();
         searchField.sendKeys(keyword);
         searchButton.click();
-        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNameLocator));
+        wait.until(ExpectedConditions.presenceOfElementLocated(searchResultsBy));
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNamesBy));
     }
 
     @Step("Сортировка по: {visibleText}")
     public void selectSortBy(String visibleText) {
         helper.waitForVisibility(sortDropdown);
         new Select(sortDropdown).selectByVisibleText(visibleText);
-        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNameLocator));
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNamesBy));
     }
 
     @Step("Генерация случайного количества от 1 до 5")
@@ -57,6 +65,7 @@ public class SearchPage extends BasePage {
 
     @Step("Получение количества найденных товаров")
     public int getProductsCount() {
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNamesBy));
         return productNames.size();
     }
 
@@ -67,6 +76,7 @@ public class SearchPage extends BasePage {
 
     @Step("Клик по товару с номером {productNumber}")
     public void clickOnProductByNumber(int productNumber) {
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNamesBy));
         int index = productNumber - 1;
         if (index < productNames.size()) {
             WebElement productLink = productNames.get(index);
@@ -77,17 +87,16 @@ public class SearchPage extends BasePage {
 
     @Step("Установка количества товара: {quantity}")
     public void setProductQuantity(int quantity) {
-        wait.until(ExpectedConditions.presenceOfElementLocated(productQuantityLocator));
-        WebElement quantityField = driver.findElement(productQuantityLocator);
-        quantityField.clear();
-        quantityField.sendKeys(String.valueOf(quantity));
+        wait.until(ExpectedConditions.presenceOfElementLocated(productQuantityBy));
+        productQuantityField.clear();
+        productQuantityField.sendKeys(String.valueOf(quantity));
     }
 
     @Step("Добавление товара в корзину")
     public void addToCart() {
-        WebElement addButton = driver.findElement(addToCartButtonLocator);
-        addButton.click();
-        wait.until(ExpectedConditions.presenceOfElementLocated(cartConfirmationLocator));
+        wait.until(ExpectedConditions.elementToBeClickable(addToCartBy));
+        addToCartButton.click();
+        wait.until(ExpectedConditions.presenceOfElementLocated(cartConfirmationBy));
     }
 
     @Step("Добавление товара №{productNumber} в количестве {quantity}")

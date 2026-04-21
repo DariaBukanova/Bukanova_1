@@ -22,16 +22,17 @@ public class RandomProductsTest extends BaseTest {
         cartPage = new CartPage(driver);
 
         homePage.addMultipleRandomProductsToCart(5);
-
-        homePage.open();
-        homePage.refresh();
-
         cartPage.goToCart();
 
         double totalBefore = cartPage.calculateExpectedTotal();
-        cartPage.removeEvenItems();
-        double totalAfter = cartPage.calculateExpectedTotal();
+        int itemsBefore = cartPage.getCartItemsCount();
 
+        cartPage.removeEvenItems();
+
+        double totalAfter = cartPage.calculateExpectedTotal();
+        int itemsAfter = cartPage.getCartItemsCount();
+
+        Assert.assertTrue(itemsAfter < itemsBefore, "Количество товаров после удаления чётных должно быть меньше");
         Assert.assertTrue(totalAfter < totalBefore, "Сумма после удаления чётных товаров должна быть меньше");
     }
 }

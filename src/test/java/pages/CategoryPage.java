@@ -18,9 +18,9 @@ public class CategoryPage extends BasePage {
     @FindBy(id = "sort")
     private WebElement sortDropdown;
 
-    private final By productNameLocator = By.cssSelector("a.prdocutname");
-    private final By productNameAlternativeLocator = By.cssSelector("div.product-name a");
-    private final By productPriceLocator = By.cssSelector("div.pricetag span.oneprice, div.pricetag span.pricenew, div.product-price span");
+    private final By productNamesBy = By.cssSelector("a.prdocutname");
+    private final By productPricesBy = By.cssSelector("div.pricetag span.oneprice, div.pricetag span.pricenew, div.product-price span, div.oneprice, div.pricenew, span.oneprice, span.pricenew");
+    private final By pageHeaderBy = By.cssSelector("header, nav, div.container-fluid");
 
     public CategoryPage(WebDriver driver) {
         super(driver);
@@ -29,7 +29,8 @@ public class CategoryPage extends BasePage {
     @Step("Открытие категории по URL: {url}")
     public void openCategory(String url) {
         driver.get(url);
-        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNameLocator));
+        wait.until(ExpectedConditions.presenceOfElementLocated(pageHeaderBy));
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNamesBy));
     }
 
     @Step("Выбор сортировки: {visibleText}")
@@ -37,18 +38,14 @@ public class CategoryPage extends BasePage {
         helper.waitForVisibility(sortDropdown);
         Select select = new Select(sortDropdown);
         select.selectByVisibleText(visibleText);
-        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNameLocator));
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productNamesBy));
     }
 
     @Step("Получение списка названий товаров")
     public List<String> getProductNamesList() {
-        List<WebElement> productNames = driver.findElements(productNameLocator);
-        if (productNames.isEmpty()) {
-            productNames = driver.findElements(productNameAlternativeLocator);
-        }
-
+        List<WebElement> elements = driver.findElements(productNamesBy);
         List<String> names = new ArrayList<>();
-        for (WebElement name : productNames) {
+        for (WebElement name : elements) {
             String text = name.getText().trim();
             if (!text.isEmpty()) {
                 names.add(text);
@@ -59,15 +56,15 @@ public class CategoryPage extends BasePage {
 
     @Step("Получение списка цен товаров")
     public List<Double> getProductPricesList() {
-        List<WebElement> productPrices = driver.findElements(productPriceLocator);
-
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(productPricesBy));
+        List<WebElement> priceElements = driver.findElements(productPricesBy);
         List<Double> prices = new ArrayList<>();
-        for (WebElement price : productPrices) {
-            String priceText = String.valueOf(PriceParser.parsePrice(price.getText()));
+        for (WebElement price : priceElements) {
+            String priceText = price.getText().trim();
             if (!priceText.isEmpty()) {
-                try {
-                    prices.add(Double.parseDouble(priceText));
-                } catch (NumberFormatException ignored) {
+                double parsedPrice = PriceParser.parsePrice(priceText);
+                if (parsedPrice > 0) {
+                    prices.add(parsedPrice);
                 }
             }
         }

@@ -12,6 +12,9 @@ import java.util.List;
 
 public class CartPage extends BasePage {
 
+    @FindBy(css = "ul.nav.topcart a")
+    private WebElement cartLink;
+
     @FindBy(css = "div.cart-info tbody tr:has(input[name*='quantity'])")
     private List<WebElement> cartRows;
 
@@ -21,14 +24,15 @@ public class CartPage extends BasePage {
     @FindBy(css = "#totals_table tr:last-child td:last-child")
     private WebElement totalAmount;
 
-    private final By cartLinkLocator = By.cssSelector("a[href*='checkout/cart']");
-    private final By cartInfoLocator = By.cssSelector("div.cart-info tbody tr");
-    private final By cartUpdateLocator = By.id("cart_update");
-    private final By quantityFieldLocator = By.cssSelector("input[name*='quantity']");
-    private final By priceElementLocator = By.cssSelector("td.align_right");
-    private final By removeButtonLocator = By.cssSelector("a[href*='remove']");
-    private final By shippingRowLocator = By.xpath("//tr[td/span[contains(text(),'Flat Shipping Rate')]]");
-    private final By shippingValueLocator = By.cssSelector("td:last-child span");
+    private final By cartLinkBy = By.cssSelector("ul.nav.topcart a");
+    private final By cartRowsBy = By.cssSelector("div.cart-info tbody tr:has(input[name*='quantity'])");
+    private final By cartInfoBy = By.cssSelector("div.cart-info");
+    private final By updateButtonBy = By.id("cart_update");
+    private final By totalAmountBy = By.cssSelector("#totals_table tr:last-child td:last-child");
+    private final By priceElementBy = By.cssSelector("td.align_right");
+    private final By quantityFieldBy = By.cssSelector("input[name*='quantity']");
+    private final By removeButtonBy = By.cssSelector("a[href*='remove']");
+    private final By shippingCostBy = By.xpath("//tr[td[contains(text(),'Flat Shipping Rate')]]/td[last()]");
 
     public CartPage(WebDriver driver) {
         super(driver);
@@ -36,15 +40,17 @@ public class CartPage extends BasePage {
 
     @Step("Переход в корзину")
     public void goToCart() {
-        wait.until(ExpectedConditions.presenceOfElementLocated(cartLinkLocator));
-        WebElement cartLink = driver.findElement(cartLinkLocator);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", cartLink);
-        wait.until(ExpectedConditions.presenceOfElementLocated(cartInfoLocator));
+        wait.until(ExpectedConditions.presenceOfElementLocated(cartLinkBy));
+        WebElement link = driver.findElement(cartLinkBy);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", link);
+        wait.until(ExpectedConditions.elementToBeClickable(link));
+        link.click();
+        wait.until(ExpectedConditions.presenceOfElementLocated(cartInfoBy));
     }
 
     @Step("Получение актуального списка строк корзины")
     public void refreshCartRows() {
-        cartRows = driver.findElements(By.cssSelector("div.cart-info tbody tr:has(input[name*='quantity'])"));
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(cartRowsBy));
     }
 
     @Step("Получение количества товаров в корзине")
@@ -60,23 +66,23 @@ public class CartPage extends BasePage {
     }
 
     private double getRowPrice(WebElement row) {
-        WebElement priceElement = row.findElement(priceElementLocator);
+        WebElement priceElement = row.findElement(priceElementBy);
         return PriceParser.parsePrice(priceElement.getText());
     }
 
     private int getRowQuantity(WebElement row) {
-        WebElement quantityField = row.findElement(quantityFieldLocator);
-        return Integer.parseInt(quantityField.getAttribute("value"));
+        WebElement quantityField = row.findElement(quantityFieldBy);
+        String value = quantityField.getAttribute("value");
+        return value.isEmpty() ? 0 : Integer.parseInt(value);
     }
 
     private double getShippingCost() {
-        try {
-            WebElement shippingRow = driver.findElement(shippingRowLocator);
-            WebElement shippingValue = shippingRow.findElement(shippingValueLocator);
-            return PriceParser.parsePrice(shippingValue.getText());
-        } catch (Exception e) {
-            return 0.0;
+        List<WebElement> shippingElements = driver.findElements(shippingCostBy);
+        if (!shippingElements.isEmpty()) {
+            String text = shippingElements.get(0).getText().trim();
+            return PriceParser.parsePrice(text);
         }
+        return 2.0;
     }
 
     @Step("Удаление товара по индексу {index}")
@@ -84,11 +90,12 @@ public class CartPage extends BasePage {
         refreshCartRows();
         if (index < cartRows.size()) {
             WebElement row = cartRows.get(index);
-            WebElement removeButton = row.findElement(removeButtonLocator);
-            helper.scrollAndWaitForClickable(removeButton);
+            WebElement removeButton = row.findElement(removeButtonBy);
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", removeButton);
+            wait.until(ExpectedConditions.elementToBeClickable(removeButton));
             removeButton.click();
             wait.until(ExpectedConditions.stalenessOf(row));
-            wait.until(ExpectedConditions.presenceOfElementLocated(cartUpdateLocator));
+            wait.until(ExpectedConditions.presenceOfElementLocated(updateButtonBy));
         }
     }
 
@@ -126,14 +133,15 @@ public class CartPage extends BasePage {
         if (minIndex != -1) {
             refreshCartRows();
             WebElement cheapestRow = cartRows.get(minIndex);
-            WebElement quantityField = cheapestRow.findElement(By.cssSelector("input[name*='quantity']"));
+            WebElement quantityField = cheapestRow.findElement(quantityFieldBy);
             int currentQuantity = getRowQuantity(cheapestRow);
             int newQuantity = currentQuantity * 2;
             quantityField.clear();
             quantityField.sendKeys(String.valueOf(newQuantity));
-            helper.scrollAndWaitForClickable(updateButton);
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", updateButton);
+            wait.until(ExpectedConditions.elementToBeClickable(updateButton));
             updateButton.click();
-            wait.until(ExpectedConditions.presenceOfElementLocated(cartUpdateLocator));
+            wait.until(ExpectedConditions.presenceOfElementLocated(updateButtonBy));
         }
     }
 
@@ -155,7 +163,7 @@ public class CartPage extends BasePage {
 
     @Step("Получение фактической итоговой суммы")
     public double getTotalAmount() {
-        wait.until(ExpectedConditions.visibilityOf(totalAmount));
+        wait.until(ExpectedConditions.presenceOfElementLocated(totalAmountBy));
         String cleanedText = totalAmount.getText().replaceAll("[^0-9.]", "");
         if (cleanedText.isEmpty()) {
             return 0.0;

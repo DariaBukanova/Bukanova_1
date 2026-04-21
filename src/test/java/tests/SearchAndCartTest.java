@@ -38,8 +38,8 @@ public class SearchAndCartTest extends BaseTest {
         cartPage.goToCart();
         cartPage.doubleCheapestItemQuantity();
 
-        double expectedTotal = PriceParser.roundToTwoDecimals(cartPage.calculateExpectedTotal());
-        double actualTotal = PriceParser.roundToTwoDecimals(cartPage.getTotalAmount());
+        double expectedTotal = cartPage.calculateExpectedTotal();
+        double actualTotal = cartPage.getTotalAmount();
 
         Assert.assertEquals(actualTotal, expectedTotal, 0.01, "Фактическая сумма не соответствует ожидаемой");
     }
