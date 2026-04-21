@@ -6,12 +6,10 @@ import org.testng.annotations.Test;
 import pages.CartPage;
 import pages.HomePage;
 
-import java.util.HashSet;
-import java.util.Set;
-
 @Epic("Интернет-магазин AutomationTestStore")
 @Feature("Корзина")
 public class RandomProductsTest extends BaseTest {
+
     private HomePage homePage;
     private CartPage cartPage;
 
@@ -21,27 +19,19 @@ public class RandomProductsTest extends BaseTest {
     @Severity(SeverityLevel.NORMAL)
     public void testRandomProductsAndRemoveEven() {
         homePage = new HomePage(driver);
-        Set<String> addedProducts = new HashSet<>();
-        int requiredProducts = 5;
+        cartPage = new CartPage(driver);
 
-        while (addedProducts.size() < requiredProducts) {
-            homePage.open();
-            driver.navigate().refresh();
-            String addedProduct = homePage.addRandomProductToCart(addedProducts);
-            if (addedProduct != null) {
-                addedProducts.add(addedProduct);
-            }
-        }
+        homePage.addMultipleRandomProductsToCart(5);
 
         homePage.open();
-        driver.navigate().refresh();
-        cartPage = new CartPage(driver);
+        homePage.refresh();
+
         cartPage.goToCart();
 
         double totalBefore = cartPage.calculateExpectedTotal();
         cartPage.removeEvenItems();
         double totalAfter = cartPage.calculateExpectedTotal();
 
-        Assert.assertTrue(totalAfter < totalBefore);
+        Assert.assertTrue(totalAfter < totalBefore, "Сумма после удаления чётных товаров должна быть меньше");
     }
 }
